@@ -1,0 +1,19 @@
+This example is using Tsdl for graphical output and UI. The image is in BMP 
+(RGB, 8 bit per channel) format.
+
+Install SDL2 library (https://www.libsdl.org/) for your system first.
+
+To install Tsdl package:
+    opam install tsdl
+
+To build:
+    make
+
+To use:
+    ./main
+
+Controls: 
+
+`WASD` or arrow keys: move 
+
+`Esc` or `Q`: exit
