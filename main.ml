@@ -18,15 +18,16 @@ module State = struct
     let (x, y, vx, vy) = st in
 
     (* gravity *)
-    let gy = 300.0 in
+    let gy = 0.0 in
     let vy = vy +. gy*.dt in
 
     (* displacement *)
-    let x = x +. vx*.dt in
+    let x = x +. vx*.0.03 in
     let y = y +. vy*.dt in
 
-    (* bounce off the walls *)
-    let dissipation = 0.95 in
+    (* bounce off the walls
+     * DISABLED *)
+    let dissipation = 0.0 in
     if x < 0.0 then
       (0.0, y, -.vx *. dissipation, vy)
     else if x > float w then
@@ -41,7 +42,7 @@ module State = struct
 end
 
 type event = 
-  Up | Down | Left | Right | Exit
+  Left | Right | Exit
    
 let rec get_event () =
   
@@ -61,8 +62,6 @@ let rec get_event () =
             if keycode = Sdl.K.q then Some Exit
             else if keycode = Sdl.K.left || keycode = Sdl.K.a then Some Left
             else if keycode = Sdl.K.right || keycode = Sdl.K.d then Some Right
-            else if keycode = Sdl.K.up || keycode = Sdl.K.w then Some Up
-            else if keycode = Sdl.K.down || keycode = Sdl.K.s then Some Down
             else None
           end
         else
@@ -82,8 +81,8 @@ let draw win rend tex state =
   (* draw the ball *)
   let (x, y, _, _) = state in
   
-  let tex_rect = Sdl.Rect.create 0 0 20 20 in
-  let dst_rect = Sdl.Rect.create (round x - 10) (round y - 10) 20 20 in
+  let tex_rect = Sdl.Rect.create 0 0 200 200 in
+  let dst_rect = Sdl.Rect.create (round x - 10) (round y - 50) 70 70 in
   ignore (Sdl.render_copy ~src:tex_rect ~dst:dst_rect rend tex);
     
   Sdl.render_present rend
@@ -109,10 +108,8 @@ let run w h win rend tex =
           let force = 200.0 in
           match opt with
           | None -> st
-          | Some Left -> State.push (-.force, 0.0) 1.0 st
-          | Some Up -> State.push (0.0, -.force) 1.0 st
-          | Some Right -> State.push (force, 0.0) 1.0 st
-          | Some Down -> State.push (0.0, force) 1.0 st
+          | Some Left -> State.push (-.force, 0.0) 2.0 st
+          | Some Right -> State.push (force, 0.0) 2.0 st
           | Some _ -> st
         in
 
@@ -126,7 +123,7 @@ let run w h win rend tex =
         loop time_cur st3
   in
 
-  loop (Int32.to_int (Sdl.get_ticks())) (State.make (0.5 *. float w, 0.5 *. float h));
+  loop (Int32.to_int (Sdl.get_ticks())) (State.make (0.5 *. float w, 0.98 *. float h));
   
   Sdl.destroy_texture tex;
   Sdl.destroy_renderer rend;
@@ -151,7 +148,7 @@ let () =
         ( match Sdl.create_renderer win ~index:(-1) ~flags:Sdl.Renderer.(accelerated + presentvsync) with
           | Error (`Msg e) -> Sdl.log "Create renderer error: %s" e; exit 1
           | Ok rend ->
-            ( match Sdl.load_bmp "img/pic.bmp" with
+            ( match Sdl.load_bmp "img/spaceship.bmp" with
             | Error (`Msg e)  -> Sdl.log "Load bmp error: %s" e; exit 1
             | Ok surf ->
 
@@ -166,7 +163,7 @@ let () =
                 (* set the transparent color (0,255,255) *)
                 begin match Sdl.alloc_format win_px_fmt with
                   | Ok fmt -> 
-                      let bg_color_uint = Sdl.map_rgb fmt 0 255 255 in
+                      let bg_color_uint = Sdl.map_rgb fmt 0 0 0 in
                       ignore(Sdl.set_color_key surf true bg_color_uint);
                       Sdl.free_format fmt
                   | _ -> ()
