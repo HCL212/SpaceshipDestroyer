@@ -14,6 +14,8 @@ To use:
 
 Controls: 
 
-`WASD` or arrow keys: move 
+Left Arrow Key / A to move Left
+Right Arrow Key / D to move Right
+Spacebar to shoot 
 
 `Esc` or `Q`: exit
