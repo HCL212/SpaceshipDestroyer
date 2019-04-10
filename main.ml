@@ -68,7 +68,7 @@ let rec get_event () =
         else
           None
 
-    | _ -> get_event () (* if it's an even of another type, get the next event *)
+    | _ -> get_event () (* if it's an event of another type, get the next event *)
   else
     None
 
@@ -135,17 +135,17 @@ let run w h win rend tex =
   exit 0
 
 
-
+(* main *)
 let () =
   
-  let width = 600 in
-  let height = 300 in
+  let width = 900 in
+  let height = 900 in
   
   (* init SDL *)
   match Sdl.init Sdl.Init.video with 
   | Error (`Msg e) -> Sdl.log "Init error: %s" e; exit 1
   | Ok () -> 
-    ( match Sdl.create_window ~w:width ~h:height "TSDL Demo" Sdl.Window.(shown + input_focus) with 
+    ( match Sdl.create_window ~w:width ~h:height "Spaceship Destroyer" Sdl.Window.(shown + input_focus) with 
       | Error (`Msg e) -> Sdl.log "Create window error: %s" e; exit 1
       | Ok win -> 
         ( match Sdl.create_renderer win ~index:(-1) ~flags:Sdl.Renderer.(accelerated + presentvsync) with
