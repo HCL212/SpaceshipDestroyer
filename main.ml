@@ -64,8 +64,8 @@ module State = struct
         * and the enemy is in another 150x200 region adjacent to the right. *)
         let player_rect = Sdl.Rect.create 0 0 150 200 in
         let enemy_rect = Sdl.Rect.create 150 0 150 200 in
-        let create_enemies_in_grid columns rows =
-            grid_coords 0.0 0.0 150.0 200.0 columns rows in
+        (* starting x-coord, starting y-coord, width increase, height increase, columns, rows *)
+        let enemy_coords = grid_coords 0.0 0.0 150.0 200.0 11 5 in
         { 
             screen_w = screen_width;
             screen_h = screen_height;
@@ -74,8 +74,11 @@ module State = struct
                 screen_h = screen_height - 16;
                 rect = player_rect;
             }
-            enemies = create_enemies_in_grid 11 5
+            enemies = enemy_coords |> List.map (fun (x,y) -> {enemy_template with x;y})
         }        
+
+    (* update player/enemy/bullets per loop *)
+    let update dt st = 0
 end
 
 (* user key presses *)
@@ -118,10 +121,11 @@ let draw win rend tex state =
     let tex_rect = State.t.enemies in        
 
     (* draw the ship *)
-    let tex_rect = State.t.player in
+    let (x, y, _, _) = state in
+    let tex_rect = Sdl.Rect.create 0 0 150 200 in
     let dst_rect = Sdl.Rect.create (round x - 10) (round y - 50) 70 70 in
     ignore (Sdl.render_copy ~src:tex_rect ~dst:dst_rect rend tex);
-    
+
     Sdl.render_present rend
 
 (* creates the windows and textures *)
@@ -152,7 +156,7 @@ let run win rend tex =
                 in
 
                 (* if the game state should update with time, update it *)
-                let st3 = st2 (*State.update (w, h) dt st2 *) in
+                let st3 = dt st2 in
 
                     (* draw *)
                     draw win rend tex st3;
