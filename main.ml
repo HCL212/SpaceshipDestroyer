@@ -28,46 +28,54 @@ module State = struct
         screen_w : int;
         screen_h : int;
         player : sprite;
-        enemies : sprite list list;
-        (* bullets: sprite list; *)
+        enemies : sprite list;
+        (* work on this later
+         * bullets: sprite list; *)
     }
 
-    (* row coordinates *)
-    let row_of_coords y x0 dx n =
-        let rec next x remaining acc =
-            if remaining > 0 then
-                next (x+.dx) (remaining-1) ((x,y) :: acc)
+    (* template for enemies *)
+    let enemy_template = {
+        x = 0.0;
+        y = 0.0;
+        rect = Sdl.Rect.create 150 0 150 200;
+    }
+
+    (* create list of coordinates for the "grid" of enemies *)
+    (* float -> float -> float -> float -> int -> int -> (float * float) list *)
+    let grid_coords x0 y0 dx dy cols rows =
+        let rec row_of_coords x y curr_col acc =
+            if curr_col > 0 then
+                row_of_coords (x +. dx) y (curr_col - 1) ((x,y) :: acc)
+            else acc
+        in        
+        let rec init_down y remaining_rows acc =
+            if remaining_rows > 0 then begin
+                let acc = row_of_coords x0 y cols acc in
+                init_down (y +. dy) (remaining_rows - 1) acc;
+            end
             else acc
         in
-        next x0 n []
-
-    (* column coordinates *)
-    let col_of_coords y0 x dx n =
-        let rec next y remaining acc =
-            if remaining > 0 then
-                next (y+.dx) (remaining-1) ((x,y) :: acc)
-            else acc
-        in
-        next y0 n []
-
+        init_down y0 rows []
+    
     (* make initial state of the game *)
+    (* int -> int -> State.t *)
     let make screen_w screen_h =
         (* source image has the player ship in the top-left 150x200
         * and the enemy is in another 150x200 region adjacent to the right. *)
         let player_rect = Sdl.Rect.create 0 0 150 200 in
         let enemy_rect = Sdl.Rect.create 150 0 150 200 in
-        let create_enemies_in_grid rect columns rows =
-            List.iter rect in 
+        let create_enemies_in_grid columns rows =
+            grid_coords 0.0 0.0 150.0 200.0 columns rows in
         { 
             screen_w = screen_width;
             screen_h = screen_height;
             player = { 
-                x = screen_w /. 2.0; 
-                y = screen_h -. 16.0; 
-                rect = player_rect
+                screen_w = screen_width / 2;
+                screen_h = screen_height - 16;
+                rect = player_rect;
             }
-            enemies = create_enemies_in_grid enemy_rect 11 5
-        }
+            enemies = create_enemies_in_grid 11 5
+        }        
 end
 
 (* user key presses *)
@@ -144,7 +152,7 @@ let run win rend tex =
                 in
 
                 (* if the game state should update with time, update it *)
-                let st3 = State.update (w, h) dt st2 in
+                let st3 = st2 (*State.update (w, h) dt st2 *) in
 
                     (* draw *)
                     draw win rend tex st3;
