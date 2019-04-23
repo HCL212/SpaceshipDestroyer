@@ -9,26 +9,30 @@
 
 open Tsdl
 
-(* Game state *)
+(* module of game *)
 module State = struct
 
+    (* default screen dimensions *)
     let screen_width = 900
     let screen_height = 900
 
+    (* sprite *)
     type sprite = {
         x : float;
         y : float;
         rect : Tsdl.Sdl.rect;
     }
     
+    (* game state *)
     type t = {
         screen_w : int;
         screen_h : int;
         player : sprite;
-        enemies : sprite list;
+        enemies : sprite list list;
         (* bullets: sprite list; *)
     }
 
+    (* row coordinates *)
     let row_of_coords y x0 dx n =
         let rec next x remaining acc =
             if remaining > 0 then
@@ -37,6 +41,7 @@ module State = struct
         in
         next x0 n []
 
+    (* column coordinates *)
     let col_of_coords y0 x dx n =
         let rec next y remaining acc =
             if remaining > 0 then
@@ -45,14 +50,14 @@ module State = struct
         in
         next y0 n []
 
+    (* make initial state of the game *)
     let make screen_w screen_h =
         (* source image has the player ship in the top-left 150x200
         * and the enemy is in another 150x200 region adjacent to the right. *)
         let player_rect = Sdl.Rect.create 0 0 150 200 in
         let enemy_rect = Sdl.Rect.create 150 0 150 200 in
         let create_enemies_in_grid rect columns rows =
-            
-
+            List.iter rect in 
         { 
             screen_w = screen_width;
             screen_h = screen_height;
@@ -102,27 +107,17 @@ let draw win rend tex state =
     ignore (Sdl.render_clear rend);
 
     (* draw the enemy *)
-    let grid_coord = (0,0) in
-    let cell_dim = (70,70) in
-    let tex_rect = Sdl.Rect.create 150 0 150 200 in
-        invaders |> for_matrix (fun i j exists ->
-            if exists then
-                let x,y = invader_pos grid_coord cell_dim i j in
-                let dst_rect = Sdl.Rect.create x y 70 70 in
-                ignore (Sdl.render_copy ~src:tex_rect ~dst:dst_rect rend tex));
-                
+    let tex_rect = State.t.enemies in        
 
     (* draw the ship *)
-    let (x, y, _, _) = state in
-  
-    let tex_rect = Sdl.Rect.create 0 0 150 200 in
+    let tex_rect = State.t.player in
     let dst_rect = Sdl.Rect.create (round x - 10) (round y - 50) 70 70 in
     ignore (Sdl.render_copy ~src:tex_rect ~dst:dst_rect rend tex);
     
     Sdl.render_present rend
 
 (* creates the windows and textures *)
-let run w h win rend tex =
+let run win rend tex =
   
     (* loop takes the state of the game *)
     let rec loop time_prev st =
@@ -210,7 +205,7 @@ let () =
                             begin match Sdl.create_texture_from_surface rend surf with
                             | Ok tex -> 
                                 (* all is good, run the program *)
-                                run width height win rend tex
+                                run win rend tex
 
                   | Error (`Msg e) -> Sdl.log "Creating texture error: %s" e; exit 1
                 end
