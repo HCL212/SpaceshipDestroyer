@@ -63,11 +63,11 @@ module State = struct
         in
 
         (* starting x-coord, starting y-coord, width increase, height increase, columns, rows *)
-        let enemy_coords = grid_coords 0.0 0.0 150.0 200.0 11 5 in
+        let enemy_coords = grid_coords 0.0 0.0 55.0 55.0 11 5 in
         { 
             screen_w = screen_width;
             screen_h = screen_height;
-            player = {x = (float_of_int screen_width) /. 2.0; y = (float_of_int screen_height) -. 16.0; rect = player_rect; }; 
+            player = {x = (float_of_int screen_width) /. 2.0 -. 27.0; y = (float_of_int screen_height) -. 50.0; rect = player_rect; }; 
             enemies = enemy_coords |> List.map (fun (x,y) -> {enemy_rect with x;y})
         }        
 
@@ -109,6 +109,9 @@ let rec get_event () =
 let round num = int_of_float (floor (0.5 +. num))
 
 let draw win rend tex state =
+    (* open module for use *)
+    let open State in
+
     (* draw the background 
      * ignore has signature "'a -> unit" since we only want graphical results, not return value *)
     ignore (Sdl.set_render_draw_color rend 32 32 32 255);
@@ -118,11 +121,15 @@ let draw win rend tex state =
      * "?" makes the argument OPTIONAL, defaults to offset value if none provided *)
     let draw_sprite ?(offset=0.0,0.0) sprite =
         let dx,dy = offset in
-        let dst_rect = Sdl.Rect.create (round dx) (round dy) 70 70 in (* x-coord, y-coord, width, height *)
-        Sdl.render_copy ~src:sprite.rect ~dst:dst_rect rend tex |> ignore
+        let x = round (sprite.x +. dx) in
+        let y = round (sprite.y +. dy) in
+        let dst = Sdl.Rect.create ~x ~y ~w:50 ~h:50 in
+        Sdl.render_copy ~src:sprite.rect ~dst rend tex |> ignore
     in
 
     (* draw the player *)
+    let width = float_of_int screen_width in
+    let height = float_of_int screen_height in
     draw_sprite state.player;
 
     (* draw the enemy *)
