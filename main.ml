@@ -48,7 +48,7 @@ module State = struct
             else acc
         in
         init_down y0 rows []
-    
+   
     (* make initial state of the game *)
     (* int -> int -> State.t *)
     let make () =
@@ -71,9 +71,25 @@ module State = struct
             enemies = enemy_coords |> List.map (fun (x,y) -> {enemy_rect with x;y})
         }        
 
-    (* work on later
-     * update player/enemy/bullets per loop *)
-    let update dt st = st
+    (* move the ship left and right *)
+    let push x_movement =
+        player.x = (player.x +. x_movement)
+
+    (* update player/enemy/bullets per loop *)
+    let update player_coords enemy_coords =
+        let (x_coord,y_coord) = player_coords in
+        let (invader_x_coord,invader_y_coord) = enemey_coords in
+        let new_enemy_coords = grid_coords invader_x_coord invader_y_coord 55.0 55.0 11 5 in
+        {
+            screen_w = screen_width;
+            screen_h = screen_height;
+            player = {
+                x = x_coord;
+                y = y_coord;
+                rect = player_rect;
+            };
+            enemies
+        }
 end
 
 (* user key presses *)
@@ -128,8 +144,6 @@ let draw win rend tex state =
     in
 
     (* draw the player *)
-    let width = float_of_int screen_width in
-    let height = float_of_int screen_height in
     draw_sprite state.player;
 
     (* draw the enemy *)
@@ -159,8 +173,8 @@ let run win rend tex =
                 let force = 200.0 in
                 match opt with
                 | None -> st
-                | Some Left -> st (* State.push (-.force, 0.0) 2.0 st *)
-                | Some Right -> st (* State.push (force, 0.0) 2.0 st *)
+                | Some Left -> st (* State.push (-.force) 2.0 st *)
+                | Some Right -> st (* State.push (force) 2.0 st *)
                 | Some _ -> st
                 in
 
