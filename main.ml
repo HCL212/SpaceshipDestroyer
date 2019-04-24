@@ -1,8 +1,7 @@
 (* TODO: enemies grid coordinates has to be updated each loop
- * TOOD: player type, enemy type, passed into a state of the game
+ * TODO: player type, enemy type, passed into a state of the game
  * TODO: player ship lasers in list
- * TODO: enemy lasers shooting back (maybe)
- * TODO: if player is hit game over
+ * TODO: if enemies reach bottom game over
  * TODO: if enemy is hit, remove
  * TODO: if all enemies killed, win
  *)
@@ -13,7 +12,7 @@ open Tsdl
 module State = struct
 
     (* default screen dimensions *)
-    let screen_width = 900
+    let screen_width = 1200
     let screen_height = 900
 
     (* sprite *)
@@ -31,13 +30,6 @@ module State = struct
         enemies : sprite list;
         (* work on this later
          * bullets: sprite list; *)
-    }
-
-    (* template for enemies *)
-    let enemy_template = {
-        x = 0.0;
-        y = 0.0;
-        rect = Sdl.Rect.create 150 0 150 200;
     }
 
     (* create list of coordinates for the "grid" of enemies *)
@@ -59,26 +51,29 @@ module State = struct
     
     (* make initial state of the game *)
     (* int -> int -> State.t *)
-    let make screen_w screen_h =
+    let make () =
         (* source image has the player ship in the top-left 150x200
         * and the enemy is in another 150x200 region adjacent to the right. *)
         let player_rect = Sdl.Rect.create 0 0 150 200 in
-        let enemy_rect = Sdl.Rect.create 150 0 150 200 in
+        let enemy_rect = {
+            x = 0.0;
+            y = 0.0;
+            rect = Sdl.Rect.create 150 0 150 200;
+            } 
+        in
+
         (* starting x-coord, starting y-coord, width increase, height increase, columns, rows *)
         let enemy_coords = grid_coords 0.0 0.0 150.0 200.0 11 5 in
         { 
             screen_w = screen_width;
             screen_h = screen_height;
-            player = { 
-                screen_w = screen_width / 2;
-                screen_h = screen_height - 16;
-                rect = player_rect;
-            }
-            enemies = enemy_coords |> List.map (fun (x,y) -> {enemy_template with x;y})
+            player = {x = (float_of_int screen_width) /. 2.0; y = (float_of_int screen_height) -. 16.0; rect = player_rect; }; 
+            enemies = enemy_coords |> List.map (fun (x,y) -> {enemy_rect with x;y})
         }        
 
-    (* update player/enemy/bullets per loop *)
-    let update dt st = 0
+    (* work on later
+     * update player/enemy/bullets per loop *)
+    let update dt st = st
 end
 
 (* user key presses *)
@@ -110,21 +105,28 @@ let rec get_event () =
     else
         None
 
-let round x = int_of_float (floor (0.5 +. x))
+(* function that rounds number down less than or equal to x *)
+let round num = int_of_float (floor (0.5 +. num))
 
 let draw win rend tex state =
-    (* draw the background *)
+    (* draw the background 
+     * ignore has signature "'a -> unit" since we only want graphical results, not return value *)
     ignore (Sdl.set_render_draw_color rend 32 32 32 255);
     ignore (Sdl.render_clear rend);
 
-    (* draw the enemy *)
-    let tex_rect = State.t.enemies in        
+    (* draw sprite generic function 
+     * "?" makes the argument OPTIONAL, defaults to offset value if none provided *)
+    let draw_sprite ?(offset=0.0,0.0) sprite =
+        let dx,dy = offset in
+        let dst_rect = Sdl.Rect.create (round dx) (round dy) 70 70 in (* x-coord, y-coord, width, height *)
+        Sdl.render_copy ~src:sprite.rect ~dst:dst_rect rend tex |> ignore
+    in
 
-    (* draw the ship *)
-    let (x, y, _, _) = state in
-    let tex_rect = Sdl.Rect.create 0 0 150 200 in
-    let dst_rect = Sdl.Rect.create (round x - 10) (round y - 50) 70 70 in
-    ignore (Sdl.render_copy ~src:tex_rect ~dst:dst_rect rend tex);
+    (* draw the player *)
+    draw_sprite state.player;
+
+    (* draw the enemy *)
+    List.iter draw_sprite state.enemies;
 
     Sdl.render_present rend
 
@@ -156,7 +158,7 @@ let run win rend tex =
                 in
 
                 (* if the game state should update with time, update it *)
-                let st3 = dt st2 in
+                let st3 = State.update dt st2 in
 
                     (* draw *)
                     draw win rend tex st3;
@@ -166,7 +168,7 @@ let run win rend tex =
                 in
 
                 (* create initial state with screen width + height and loop for next state/frame *)
-                let initial_state = State.make (screen_width, screen_height) in
+                let initial_state = State.make () in
                 loop (Int32.to_int (Sdl.get_ticks())) initial_state;
   
   Sdl.destroy_texture tex;
@@ -184,7 +186,7 @@ let () =
     | Error (`Msg e) -> Sdl.log "Init error: %s" e; exit 1
     | Ok () -> 
 
-        ( match Sdl.create_window ~w:screen_width ~h:screen_height "Spaceship Destroyer" Sdl.Window.(shown + input_focus) with 
+        ( match Sdl.create_window ~w:1200 ~h:900 "Spaceship Destroyer" Sdl.Window.(shown + input_focus) with 
         | Error (`Msg e) -> Sdl.log "Create window error: %s" e; exit 1
         | Ok win -> 
 
@@ -224,4 +226,5 @@ let () =
                 )
             )
         )
+
 
