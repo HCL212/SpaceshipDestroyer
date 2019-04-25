@@ -2,8 +2,9 @@
  * TODO: player type, enemy type, passed into a state of the game
  * TODO: player ship lasers in list
  * TODO: if enemies reach bottom game over
- * TODO: if enemy is hit, remove
+ * TODO: if enemy is hit, remove (List.filter)
  * TODO: if all enemies killed, win
+ * TODO: remove bullets from list if they hit top of screen (List.filter)
  *)
 
 open Tsdl
@@ -28,8 +29,8 @@ module State = struct
         screen_h : int;
         player : sprite;
         enemies : sprite list;
-        (* work on this later
-         * bullets: sprite list; *)
+        enemy_offset : (float * float);
+        bullets: sprite list;
     }
 
     (* create list of coordinates for the "grid" of enemies *)
@@ -64,31 +65,32 @@ module State = struct
 
         (* starting x-coord, starting y-coord, width increase, height increase, columns, rows *)
         let enemy_coords = grid_coords 0.0 0.0 55.0 55.0 11 5 in
+
+        (* initial game state values *)
         { 
             screen_w = screen_width;
             screen_h = screen_height;
             player = {x = (float_of_int screen_width) /. 2.0 -. 27.0; y = (float_of_int screen_height) -. 50.0; rect = player_rect; }; 
-            enemies = enemy_coords |> List.map (fun (x,y) -> {enemy_rect with x;y})
+            enemies = enemy_coords |> List.map (fun (x,y) -> {enemy_rect with x;y});
+            enemy_offset = 0.0, 0.0;
+            bullets = [];
         }        
 
     (* move the ship left and right *)
-    let push x_movement =
-        player.x = (player.x +. x_movement)
-
+    let push movement sprite =
+        if sprite.x +. movement > (float_of_int screen_width) -. 55.0 || sprite.x +. movement < 0.0 then
+            sprite
+        else
+            { sprite with x = sprite.x +. movement; }
+                
     (* update player/enemy/bullets per loop *)
-    let update player_coords enemy_coords =
-        let (x_coord,y_coord) = player_coords in
-        let (invader_x_coord,invader_y_coord) = enemey_coords in
-        let new_enemy_coords = grid_coords invader_x_coord invader_y_coord 55.0 55.0 11 5 in
+    let update sprite state =
+        let x = 0.0 in
+        let y = 0.0 in
         {
-            screen_w = screen_width;
-            screen_h = screen_height;
-            player = {
-                x = x_coord;
-                y = y_coord;
-                rect = player_rect;
-            };
-            enemies
+            state with
+            player = sprite;
+            enemy_offset = x, y;
         }
 end
 
@@ -108,7 +110,7 @@ let rec get_event () =
             let keycode = Sdl.Event.get e Sdl.Event.keyboard_keycode in
             let repeat = Sdl.Event.get e Sdl.Event.keyboard_repeat in
 
-            if repeat = 0 then (* not a repeat *)
+            if repeat = 1 then (* 0 = not a repeat, 1 = repeat *)
             begin
                 if keycode = Sdl.K.q then Some Exit
                 else if keycode = Sdl.K.left || keycode = Sdl.K.a then Some Left
@@ -134,7 +136,8 @@ let draw win rend tex state =
     ignore (Sdl.render_clear rend);
 
     (* draw sprite generic function 
-     * "?" makes the argument OPTIONAL, defaults to offset value if none provided *)
+     * "?" makes the argument OPTIONAL, 
+     * but we can add defaults to offset value if none provided (no longer optional since it always has a value) *)
     let draw_sprite ?(offset=0.0,0.0) sprite =
         let dx,dy = offset in
         let x = round (sprite.x +. dx) in
@@ -147,7 +150,7 @@ let draw win rend tex state =
     draw_sprite state.player;
 
     (* draw the enemy *)
-    List.iter draw_sprite state.enemies;
+    List.iter draw_sprite (~offset:state.enemy_offset) state.enemies;
 
     Sdl.render_present rend
 
@@ -156,6 +159,7 @@ let run win rend tex =
   
     (* loop takes the state of the game *)
     let rec loop time_prev st =
+        let open State in
 
         Sdl.delay 10l; (* in milliseconds *)
         
@@ -169,17 +173,17 @@ let run win rend tex =
         | Some Exit -> ()
         | opt ->
             (* process one key pressed, if needed *)
-            let st2 = 
-                let force = 200.0 in
+            let player_action = 
+                let force = 20.0 in
                 match opt with
-                | None -> st
-                | Some Left -> st (* State.push (-.force) 2.0 st *)
-                | Some Right -> st (* State.push (force) 2.0 st *)
-                | Some _ -> st
+                | None -> st.player
+                | Some Left -> State.push (-.force) st.player
+                | Some Right -> State.push (force) st.player
+                | Some _ -> st.player
                 in
 
                 (* if the game state should update with time, update it *)
-                let st3 = State.update dt st2 in
+                let st3 = State.update player_action st in
 
                     (* draw *)
                     draw win rend tex st3;
