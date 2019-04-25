@@ -30,6 +30,7 @@ module State = struct
         player : sprite;
         enemies : sprite list;
         enemy_offset : (float * float);
+        enemy_forward: bool;
         bullets: sprite list;
     }
 
@@ -64,7 +65,7 @@ module State = struct
         in
 
         (* starting x-coord, starting y-coord, width increase, height increase, columns, rows *)
-        let enemy_coords = grid_coords 0.0 0.0 55.0 55.0 11 5 in
+        let enemy_coords = grid_coords 0.0 0.0 55.0 55.0 10 5 in
 
         (* initial game state values *)
         { 
@@ -73,6 +74,7 @@ module State = struct
             player = {x = (float_of_int screen_width) /. 2.0 -. 27.0; y = (float_of_int screen_height) -. 50.0; rect = player_rect; }; 
             enemies = enemy_coords |> List.map (fun (x,y) -> {enemy_rect with x;y});
             enemy_offset = 0.0, 0.0;
+            enemy_forward = true;
             bullets = [];
         }        
 
@@ -85,11 +87,22 @@ module State = struct
                 
     (* update player/enemy/bullets per loop *)
     let update sprite state =
-        let x = 0.0 in
-        let y = 0.0 in
+        let x,y = state.enemy_offset in
+
+        let enemy_forw =
+            if x < 0.1 then true
+            else if x > (float_of_int screen_width) /. 2.0 then false
+            else true in
+        let x = 
+            if enemy_forw = true then x +. 2.5 
+            else x -. 2.5 in
+        let y = 
+            if enemy_forw = false then y +. 2.0
+            else y +. 0.0 in
         {
             state with
             player = sprite;
+            enemy_forward = enemy_forw;
             enemy_offset = x, y;
         }
 end
@@ -110,15 +123,14 @@ let rec get_event () =
             let keycode = Sdl.Event.get e Sdl.Event.keyboard_keycode in
             let repeat = Sdl.Event.get e Sdl.Event.keyboard_repeat in
 
-            if repeat = 1 then (* 0 = not a repeat, 1 = repeat *)
+            if repeat = 0 then (* 0 = not a repeat, 1 = repeat *)
             begin
                 if keycode = Sdl.K.q then Some Exit
                 else if keycode = Sdl.K.left || keycode = Sdl.K.a then Some Left
                 else if keycode = Sdl.K.right || keycode = Sdl.K.d then Some Right
                 else None
             end
-            else
-                None
+            else None
         | _ -> get_event () (* if it's an event of another type, get the next event *)
     else
         None
@@ -150,7 +162,7 @@ let draw win rend tex state =
     draw_sprite state.player;
 
     (* draw the enemy *)
-    List.iter draw_sprite (~offset:state.enemy_offset) state.enemies;
+    List.iter (draw_sprite ~offset:state.enemy_offset) state.enemies;
 
     Sdl.render_present rend
 
@@ -174,7 +186,7 @@ let run win rend tex =
         | opt ->
             (* process one key pressed, if needed *)
             let player_action = 
-                let force = 20.0 in
+                let force = 30.0 in
                 match opt with
                 | None -> st.player
                 | Some Left -> State.push (-.force) st.player
