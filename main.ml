@@ -1,8 +1,6 @@
-(* TODO: enemies grid coordinates has to be updated each loop
- * TODO: player type, enemy type, passed into a state of the game
- * TODO: player ship lasers in list
+ (* TODO: player ship lasers in list
  * TODO: if enemies reach bottom game over
- * TODO: if enemy is hit, remove (List.filter)
+ * TODO: if enemy is hit, remove enemy and bullet (List.filter)
  * TODO: if all enemies killed, win
  * TODO: remove bullets from list if they hit top of screen (List.filter)
  *)
@@ -80,13 +78,24 @@ module State = struct
 
     (* move the ship left and right *)
     let push movement sprite =
+        (* player boundary + movement *)
         if sprite.x +. movement > (float_of_int screen_width) -. 55.0 || sprite.x +. movement < 0.0 then
             sprite
         else
             { sprite with x = sprite.x +. movement; }
+
+    let shoot bullets sprite =
+        (* add bullet at player position *)
+        let x = sprite.x in
+        let y = sprite.y in
+        ((x,y) :: bullets) 
                 
     (* update player/enemy/bullets per loop *)
-    let update sprite state =
+    let update sprite bullets state =
+        
+        (* enemy movement
+         * goes back and forth from left to right
+         * goes down after it "hits a wall" *)
         let x,y = state.enemy_offset in
         let forward_limit = (float_of_int screen_width) /. 2.0 in
         let enem_travel_speed = 7.0 in
@@ -103,6 +112,8 @@ module State = struct
             if x > forward_limit then y +. enem_down_speed
             else if x < 0.1 then y +. enem_down_speed
             else y +. 0.0 in
+
+        (* new state t *)
         {
             state with
             player = sprite;
@@ -113,7 +124,7 @@ end
 
 (* user key presses *)
 type event = 
-    Left | Right | Exit
+    Left | Right | Shoot | Exit
    
 let rec get_event () =
   
@@ -132,6 +143,7 @@ let rec get_event () =
                 if keycode = Sdl.K.q then Some Exit
                 else if keycode = Sdl.K.left || keycode = Sdl.K.a then Some Left
                 else if keycode = Sdl.K.right || keycode = Sdl.K.d then Some Right
+                else if keycode = Sdl.K.space then Some Shoot
                 else None
             end
             else None
@@ -189,7 +201,7 @@ let run win rend tex =
         | Some Exit -> ()
         | opt ->
             (* process one key pressed, if needed *)
-            let player_action = 
+            let player_sprite = 
                 let force = 30.0 in
                 match opt with
                 | None -> st.player
@@ -198,19 +210,19 @@ let run win rend tex =
                 | Some _ -> st.player
                 in
 
-                (* if the game state should update with time, update it *)
-                let st3 = State.update player_action st in
+        (* if the game state should update with time, update it *)
+        let st3 = State.update player_sprite st.bullets st in
 
-                    (* draw *)
-                    draw win rend tex st3;
+        (* draw *)
+        draw win rend tex st3;
 
-                    (* call the loop again *)
-                    loop time_cur st3
-                in
+        (* call the loop again *)
+        loop time_cur st3
+        in
 
-                (* create initial state with screen width + height and loop for next state/frame *)
-                let initial_state = State.make () in
-                loop (Int32.to_int (Sdl.get_ticks())) initial_state;
+        (* create initial state with screen width + height and loop for next state/frame *)
+        let initial_state = State.make () in
+        loop (Int32.to_int (Sdl.get_ticks())) initial_state;
   
   Sdl.destroy_texture tex;
   Sdl.destroy_renderer rend;
