@@ -88,16 +88,20 @@ module State = struct
     (* update player/enemy/bullets per loop *)
     let update sprite state =
         let x,y = state.enemy_offset in
+        let forward_limit = (float_of_int screen_width) /. 2.0 in
+        let enem_travel_speed = 7.0 in
+        let enem_down_speed = 30.0 in
 
         let enemy_forw =
             if x < 0.1 then true
-            else if x > (float_of_int screen_width) /. 2.0 then false
-            else true in
+            else if x > forward_limit then false
+            else state.enemy_forward in
         let x = 
-            if enemy_forw = true then x +. 2.5 
-            else x -. 2.5 in
+            if enemy_forw = true then x +. enem_travel_speed 
+            else x -. enem_travel_speed in
         let y = 
-            if enemy_forw = false then y +. 2.0
+            if x > forward_limit then y +. enem_down_speed
+            else if x < 0.1 then y +. enem_down_speed
             else y +. 0.0 in
         {
             state with
