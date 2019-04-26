@@ -29,7 +29,7 @@ module State = struct
         enemies : sprite list;
         enemy_offset : (float * float);
         enemy_forward: bool;
-        bullets: sprite list;
+        bullets : sprite list;
     }
 
     (* create list of coordinates for the "grid" of enemies *)
@@ -76,22 +76,42 @@ module State = struct
             bullets = [];
         }        
 
-    (* move the ship left and right *)
-    let push movement sprite =
-        (* player boundary + movement *)
-        if sprite.x +. movement > (float_of_int screen_width) -. 55.0 || sprite.x +. movement < 0.0 then
-            sprite
-        else
-            { sprite with x = sprite.x +. movement; }
+    (* move the ship left and right 
+     * return State.t *)
+    let push movement state =
+        let new_player_sprite = 
+            {
+                state.player with
+                x = state.player.x +. movement
+            } in
 
-    let shoot bullets sprite =
+        (* player boundary + movement *)
+        if state.player.x +. movement > (float_of_int screen_width) -. 55.0 || state.player.x +. movement < 0.0 then
+            state
+        else
+            {
+                state with
+                player = new_player_sprite; 
+            }
+
+    (* return State.t *)
+    let shoot state =
         (* add bullet at player position *)
-        let x = sprite.x in
-        let y = sprite.y in
-        ((x,y) :: bullets) 
+        let bullet_rect = {
+            x = state.player.x +. 12.5;
+            y = state.player.y;
+            rect = Sdl.Rect.create 300 0 160 200
+            } 
+        in
+
+        let new_bullet_list = (bullet_rect :: state.bullets) in
+        {
+            state with
+            bullets = new_bullet_list;
+        }
                 
     (* update player/enemy/bullets per loop *)
-    let update sprite bullets state =
+    let update state =
         
         (* enemy movement
          * goes back and forth from left to right
@@ -113,12 +133,17 @@ module State = struct
             else if x < 0.1 then y +. enem_down_speed
             else y +. 0.0 in
 
+        (* bullet movement 
+        let new_bullets = List.map (fun (x,y) -> y -. 1.0) state.bullets in
+        *)
+
         (* new state t *)
         {
             state with
-            player = sprite;
+            player = state.player;
             enemy_forward = enemy_forw;
             enemy_offset = x, y;
+            bullets = state.bullets;
         }
 end
 
@@ -166,19 +191,22 @@ let draw win rend tex state =
     (* draw sprite generic function 
      * "?" makes the argument OPTIONAL, 
      * but we can add defaults to offset value if none provided (no longer optional since it always has a value) *)
-    let draw_sprite ?(offset=0.0,0.0) sprite =
+    let draw_sprite ?(offset=0.0,0.0) width height sprite =
         let dx,dy = offset in
         let x = round (sprite.x +. dx) in
         let y = round (sprite.y +. dy) in
-        let dst = Sdl.Rect.create ~x ~y ~w:50 ~h:50 in
+        let dst = Sdl.Rect.create ~x ~y ~w:width ~h:height in
         Sdl.render_copy ~src:sprite.rect ~dst rend tex |> ignore
     in
 
     (* draw the player *)
-    draw_sprite state.player;
+    draw_sprite 50 50 state.player;
 
     (* draw the enemy *)
-    List.iter (draw_sprite ~offset:state.enemy_offset) state.enemies;
+    List.iter (draw_sprite ~offset:state.enemy_offset 50 50) state.enemies;
+
+    (* draw the bullets *)
+    List.iter (draw_sprite 25 25) state.bullets;
 
     Sdl.render_present rend
 
@@ -201,28 +229,29 @@ let run win rend tex =
         | Some Exit -> ()
         | opt ->
             (* process one key pressed, if needed *)
-            let player_sprite = 
+            let new_state = 
                 let force = 30.0 in
                 match opt with
-                | None -> st.player
-                | Some Left -> State.push (-.force) st.player
-                | Some Right -> State.push (force) st.player
-                | Some _ -> st.player
+                | None -> st
+                | Some Left -> State.push (-.force) st
+                | Some Right -> State.push (force) st
+                | Some Shoot -> State.shoot st
+                | Some _ -> st
                 in
 
-        (* if the game state should update with time, update it *)
-        let st3 = State.update player_sprite st.bullets st in
+            (* if the game state should update with time, update it *)
+            let st3 = State.update new_state in
 
-        (* draw *)
-        draw win rend tex st3;
+            (* draw *)
+            draw win rend tex st3;
 
-        (* call the loop again *)
-        loop time_cur st3
-        in
+            (* call the loop again *)
+            loop time_cur st3
+            in
 
-        (* create initial state with screen width + height and loop for next state/frame *)
-        let initial_state = State.make () in
-        loop (Int32.to_int (Sdl.get_ticks())) initial_state;
+            (* create initial state with screen width + height and loop for next state/frame *)
+            let initial_state = State.make () in
+            loop (Int32.to_int (Sdl.get_ticks())) initial_state;
   
   Sdl.destroy_texture tex;
   Sdl.destroy_renderer rend;
