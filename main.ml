@@ -1,8 +1,6 @@
- (* TODO: player ship lasers in list
- * TODO: if enemies reach bottom game over
+ (* TODO: if enemies reach bottom game over
  * TODO: if enemy is hit, remove enemy and bullet (List.filter)
  * TODO: if all enemies killed, win
- * TODO: remove bullets from list if they hit top of screen (List.filter)
  *)
 
 open Tsdl
@@ -115,7 +113,8 @@ module State = struct
         
         (* enemy movement
          * goes back and forth from left to right
-         * goes down after it "hits a wall" *)
+         * goes down after it "hits a wall" 
+         * enemy_forw : true = go right, false = go left *)
         let x,y = state.enemy_offset in
         let forward_limit = (float_of_int screen_width) /. 2.0 in
         let enem_travel_speed = 7.0 in
@@ -133,17 +132,19 @@ module State = struct
             else if x < 0.1 then y +. enem_down_speed
             else y +. 0.0 in
 
-        (* bullet movement 
-        let new_bullets = List.map (fun (x,y) -> y -. 1.0) state.bullets in
-        *)
-
+        (* bullet movement
+         * bullets1 = y-coord update (moving bullets up) 
+         * bullets2 = remove bullets that go off top of the screen *)
+        let bullets1 = List.map (fun s -> {s with y = s.y -. 2.0}) state.bullets in
+        let bullets2 = List.filter (fun s -> s.y > 0.0) bullets1 in
+        
         (* new state t *)
         {
             state with
             player = state.player;
             enemy_forward = enemy_forw;
             enemy_offset = x, y;
-            bullets = state.bullets;
+            bullets = bullets2;
         }
 end
 
@@ -206,7 +207,7 @@ let draw win rend tex state =
     List.iter (draw_sprite ~offset:state.enemy_offset 50 50) state.enemies;
 
     (* draw the bullets *)
-    List.iter (draw_sprite 25 25) state.bullets;
+    List.iter (draw_sprite 20 20) state.bullets;
 
     Sdl.render_present rend
 
