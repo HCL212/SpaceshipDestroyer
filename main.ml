@@ -161,7 +161,9 @@ module State = struct
 
         (* bullet movement
          * bullets1 = y-coord update (moving bullets up) 
-         * bullets2 = remove bullets that go off top of the screen *)
+         * bullets2 = remove bullets that go off top of the screen
+         * bullets3 = bullets that have not hit the enemy 
+         * enemies1 = enemies that have not been hit *)
         let bullets1 = List.map (fun s -> {s with y = s.y -. 4.0}) state.bullets in
         let bullets2 = List.filter (fun s -> s.y > 0.0) bullets1 in
         let bullets3 = check_bullets bullets2 state.enemies x y in
@@ -280,7 +282,7 @@ let run win rend tex =
             loop time_cur st3
             in
 
-            (* create initial state with screen width + height and loop for next state/frame *)
+            (* create initial state and loop for next state/frame *)
             let initial_state = State.make () in
             loop (Int32.to_int (Sdl.get_ticks())) initial_state;
   
