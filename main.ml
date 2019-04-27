@@ -56,8 +56,9 @@ module State = struct
         | [], _ -> []
         | _, [] -> bullets
         | (h::t), (hh::tt)->
-                if (h.x > hh.x +. ox) && (h.x < hh.x +. ox +. 50.0) && (h.y < hh.y +. oy +. 50.0) 
-                    then check_bullets t enemies ox oy
+                if (h.x > hh.x +. ox) && (h.x < hh.x +. ox +. 50.0)
+                    && (h.y > hh.y +. oy) && (h.y < hh.y +. oy +. 50.0)
+                        then t
                 else h :: check_bullets t enemies ox oy
 
     let rec check_enemies enemies bullets offset_x offset_y =
@@ -67,8 +68,9 @@ module State = struct
         | [], _ -> []
         | _, [] -> enemies
         | (h::t), (hh::tt)->
-                if (h.x +. ox < hh.x) && (h.x +. ox +. 50.0 > hh.x) && (h.y +. oy +. 50.0 > hh.y) 
-                    then check_enemies t bullets ox oy
+                if (h.x +. ox < hh.x) && (h.x +. ox +. 50.0 > hh.x)
+                    && (h.y +. oy < hh.y) && (h.y +. oy +. 50.0 > hh.y)
+                        then t
                 else h :: check_enemies t bullets ox oy
    
     (* make initial state of the game *)
