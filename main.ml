@@ -60,10 +60,10 @@ module State = struct
             } 
         in
 
-        (* starting x-coord, starting y-coord, width increase, height increase, columns, rows *)
+        (* starting x-coord, starting y-coord, x increase of next, y increase of next, columns, rows *)
         let enemy_coords = grid_coords 0.0 0.0 55.0 55.0 10 5 in
 
-        (* initial game state values *)
+        (* initial game state.t values *)
         { 
             screen_w = screen_width;
             screen_h = screen_height;
@@ -92,7 +92,8 @@ module State = struct
                 player = new_player_sprite; 
             }
 
-    (* return State.t *)
+    (* shoot bullets
+     * return State.t *)
     let shoot state =
         (* add bullet at player position *)
         let bullet_rect = {
@@ -135,7 +136,7 @@ module State = struct
         (* bullet movement
          * bullets1 = y-coord update (moving bullets up) 
          * bullets2 = remove bullets that go off top of the screen *)
-        let bullets1 = List.map (fun s -> {s with y = s.y -. 2.0}) state.bullets in
+        let bullets1 = List.map (fun s -> {s with y = s.y -. 4.0}) state.bullets in
         let bullets2 = List.filter (fun s -> s.y > 0.0) bullets1 in
         
         (* new state t *)
