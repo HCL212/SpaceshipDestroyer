@@ -46,6 +46,30 @@ module State = struct
             else acc
         in
         init_down y0 rows []
+
+    (* check collision and remove from bullet + enemy lists 
+     * returns sprites for sprite_list1 with removed elements *)
+    let rec check_bullets bullets enemies offset_x offset_y =
+        let ox,oy = offset_x, offset_y in
+        match bullets, enemies with
+        | [], [] -> []
+        | [], _ -> []
+        | _, [] -> bullets
+        | (h::t), (hh::tt)->
+                if (h.x > hh.x +. ox) && (h.x < hh.x +. ox +. 50.0) && (h.y < hh.y +. oy +. 50.0) 
+                    then check_bullets t enemies ox oy
+                else h :: check_bullets t enemies ox oy
+
+    let rec check_enemies enemies bullets offset_x offset_y =
+        let ox,oy = offset_x, offset_y in
+        match enemies, bullets with
+        | [], [] -> []
+        | [], _ -> []
+        | _, [] -> enemies
+        | (h::t), (hh::tt)->
+                if (h.x +. ox < hh.x) && (h.x +. ox +. 50.0 > hh.x) && (h.y +. oy +. 50.0 > hh.y) 
+                    then check_enemies t bullets ox oy
+                else h :: check_enemies t bullets ox oy
    
     (* make initial state of the game *)
     (* int -> int -> State.t *)
@@ -138,14 +162,17 @@ module State = struct
          * bullets2 = remove bullets that go off top of the screen *)
         let bullets1 = List.map (fun s -> {s with y = s.y -. 4.0}) state.bullets in
         let bullets2 = List.filter (fun s -> s.y > 0.0) bullets1 in
+        let bullets3 = check_bullets bullets2 state.enemies x y in
+        let enemies1 = check_enemies state.enemies bullets2 x y in
         
         (* new state t *)
         {
             state with
             player = state.player;
             enemy_forward = enemy_forw;
+            enemies = enemies1;
             enemy_offset = x, y;
-            bullets = bullets2;
+            bullets = bullets3;
         }
 end
 
