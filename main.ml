@@ -1,5 +1,4 @@
  (* TODO: if enemies reach bottom game over
- * TODO: if enemy is hit, remove enemy and bullet (List.filter)
  * TODO: if all enemies killed, win
  *)
 
