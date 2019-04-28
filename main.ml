@@ -282,15 +282,15 @@ let run win rend tex =
                 | Some _ -> st
                 in
 
-            (* if the game state should update with time, update it *)
-            let st3 = State.update new_state in
+                (* if the game state should update with time, update it *)
+                let st3 = State.update new_state in
 
-            (* draw *)
-            draw win rend tex st3;
+                (* draw *)
+                draw win rend tex st3;
 
-            (* call the loop again *)
-            loop time_cur st3
-            in
+                (* call the loop again *)
+                loop time_cur st3
+                in
 
             (* create initial state and loop for next state/frame *)
             let initial_state = State.make () in
