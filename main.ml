@@ -47,31 +47,41 @@ module State = struct
         in
         init_down y0 rows []
 
-    (* check collision and remove from bullet + enemy lists 
-     * returns sprites for sprite_list1 with removed elements *)
+    (* following 2 functions checks collision and remove from bullet + enemy lists 
+     * returns sprites for bullets/enemies with removed elements *)
     let rec check_bullets bullets enemies offset_x offset_y =
         let ox,oy = offset_x, offset_y in
-        match bullets, enemies with
-        | [], [] -> []
-        | [], _ -> []
-        | _, [] -> bullets
-        | (h::t), (hh::tt)->
-                if (h.x > hh.x +. ox) && (h.x < hh.x +. ox +. 50.0)
-                    && (h.y > hh.y +. oy) && (h.y < hh.y +. oy +. 50.0)
-                        then t
-                else h :: check_bullets t enemies ox oy
+	    let rec compare a b =
+	    match b with
+	    | [] -> false
+	    | hd::tl ->
+		    if (a.x > hd.x +. ox) && (a.x < hd.x +. ox +. 50.0)
+		    && (a.y > hd.y +. oy) && (a.y < hd.y +. oy +. 50.0)
+			    then true
+		    else compare a tl
+		in
+		    match bullets with
+		    | [] -> []
+		    | hd::tl -> 
+			    if (compare hd enemies) then tl
+			    else hd :: check_bullets tl enemies ox oy
 
     let rec check_enemies enemies bullets offset_x offset_y =
         let ox,oy = offset_x, offset_y in
-        match enemies, bullets with
-        | [], [] -> []
-        | [], _ -> []
-        | _, [] -> enemies
-        | (h::t), (hh::tt)->
-                if (h.x +. ox < hh.x) && (h.x +. ox +. 50.0 > hh.x)
-                    && (h.y +. oy < hh.y) && (h.y +. oy +. 50.0 > hh.y)
-                        then t
-                else h :: check_enemies t bullets ox oy
+        let rec compare a b =
+        match b with
+        | [] -> false
+        | hd::tl ->
+            if (a.x +. ox < hd.x) && (a.x +. ox +. 50.0 > hd.x)
+            && (a.y +. oy < hd.y) && (a.y +. oy +. 50.0 > hd.y)
+                then true
+            else compare a tl
+        in
+            match enemies with
+            | [] -> []
+            | hd::tl ->
+                if (compare hd bullets) then tl
+                else hd :: check_enemies tl bullets ox oy
    
     (* make initial state of the game *)
     (* int -> int -> State.t *)
