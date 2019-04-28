@@ -1,4 +1,4 @@
-This program is an implementatin of the classic "Space Invaders" game from 1978.
+This program is an implementation of the classic "Space Invaders" game from 1978.
 It is using Tsdl for graphical output and UI. The images come from a .BMP (RGB, 8 bit per channel) format.
 
 Install SDL2 library (https://www.libsdl.org/) for your system first.
